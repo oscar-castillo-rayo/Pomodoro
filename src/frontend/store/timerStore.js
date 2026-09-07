@@ -1,35 +1,39 @@
 import { create } from 'zustand';
+import { useSettingsStore } from './settingsStore';
 
 export const TIMER_MODES = {
-  FOCUS: {
-    id: 'FOCUS',
-    label: 'Concentración',
-    shortLabel: 'Focus',
-    duration: 25 * 60,
-  },
-  SHORT: {
-    id: 'SHORT',
-    label: 'Descanso corto',
-    shortLabel: 'Descanso corto',
-    duration: 5 * 60,
-  },
-  LONG: {
-    id: 'LONG',
-    label: 'Descanso largo',
-    shortLabel: 'Descanso largo',
-    duration: 15 * 60,
-  },
+  FOCUS: { id: 'FOCUS', label: 'Concentración', shortLabel: 'Focus', settingsKey: 'focus_minutes' },
+  SHORT: { id: 'SHORT', label: 'Descanso corto', shortLabel: 'Descanso corto', settingsKey: 'short_break_minutes' },
+  LONG: { id: 'LONG', label: 'Descanso largo', shortLabel: 'Descanso largo', settingsKey: 'long_break_minutes' },
 };
+
+// Ciclo simple para el auto-inicio (HU-4.1): tras un foco viene un
+// descanso corto, y tras cualquier descanso se vuelve a concentración.
+// El descanso largo se elige manualmente desde las pestañas.
+const NEXT_MODE = { FOCUS: 'SHORT', SHORT: 'FOCUS', LONG: 'FOCUS' };
+
+function durationFor(mode) {
+  const minutes = useSettingsStore.getState()[TIMER_MODES[mode].settingsKey];
+  return minutes * 60;
+}
 
 export const useTimerStore = create((set, get) => ({
   mode: 'FOCUS',
-  secondsLeft: TIMER_MODES.FOCUS.duration,
+  secondsLeft: durationFor('FOCUS'),
   isRunning: false,
+
+  // Se llama una vez que las preferencias reales terminan de cargar del
+  // backend, para que el conteo refleje la duración configurada.
+  syncDurationWithSettings: () => {
+    const { mode, isRunning } = get();
+    if (isRunning) return;
+    set({ secondsLeft: durationFor(mode) });
+  },
 
   setMode: (mode) =>
     set({
       mode,
-      secondsLeft: TIMER_MODES[mode].duration,
+      secondsLeft: durationFor(mode),
       isRunning: false,
     }),
 
@@ -40,15 +44,22 @@ export const useTimerStore = create((set, get) => ({
   stop: () =>
     set((state) => ({
       isRunning: false,
-      secondsLeft: TIMER_MODES[state.mode].duration,
+      secondsLeft: durationFor(state.mode),
     })),
 
   tick: () => {
-    const { secondsLeft } = get();
-    if (secondsLeft <= 1) {
-      set({ secondsLeft: 0, isRunning: false });
+    const { secondsLeft, mode } = get();
+    if (secondsLeft > 1) {
+      set({ secondsLeft: secondsLeft - 1 });
       return;
     }
-    set({ secondsLeft: secondsLeft - 1 });
+
+    const autoStart = useSettingsStore.getState().auto_start;
+    if (autoStart) {
+      const nextMode = NEXT_MODE[mode];
+      set({ mode: nextMode, secondsLeft: durationFor(nextMode), isRunning: true });
+    } else {
+      set({ secondsLeft: 0, isRunning: false });
+    }
   },
 }));
