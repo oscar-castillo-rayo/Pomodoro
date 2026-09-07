@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Timer from './Timer';
 import TasksView from './TasksView';
 import SettingsView from './SettingsView';
+import AlarmManager from './AlarmManager';
 import { useSettingsStore } from './store/settingsStore';
 import { useTimerStore } from './store/timerStore';
 import { ACCENTS, BACKGROUNDS, useThemeStore } from './store/themeStore';
@@ -48,6 +49,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[var(--app-bg)]">
+      <AlarmManager />
       <nav className="mx-auto flex w-full max-w-2xl justify-center gap-2 pt-4">
         {VIEWS.map((item) => (
           <button

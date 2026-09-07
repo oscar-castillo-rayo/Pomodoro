@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSettingsStore } from './store/settingsStore';
 import { useTimerStore } from './store/timerStore';
 import { ACCENTS, BACKGROUNDS, useThemeStore } from './store/themeStore';
+import { useAlarmStore } from './store/alarmStore';
 
 // SettingsView.jsx - Ajuste de duración de los ciclos y auto-inicio (HU-4.1)
 // y personalización de fondo/color de acento (HU-4.2). Las duraciones
@@ -21,6 +22,11 @@ export default function SettingsView() {
   const background = useThemeStore((state) => state.background);
   const setAccent = useThemeStore((state) => state.setAccent);
   const setBackground = useThemeStore((state) => state.setBackground);
+
+  const alarmVolume = useAlarmStore((state) => state.volume);
+  const setAlarmVolume = useAlarmStore((state) => state.setVolume);
+  const notificationsSupported = typeof Notification !== 'undefined';
+  const notificationPermission = notificationsSupported ? Notification.permission : 'unsupported';
 
   const [form, setForm] = useState({
     focus_minutes: focusMinutes,
@@ -163,6 +169,46 @@ export default function SettingsView() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-2xl shadow-black/20">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-100">Alarma y notificaciones</h2>
+            <p className="text-xs text-slate-500">
+              Suena y notifica en el navegador cuando un intervalo llega a 00:00.
+            </p>
+          </div>
+
+          <label className="flex flex-col gap-2 text-sm text-slate-300">
+            <span>Volumen de la alarma</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={alarmVolume}
+              onChange={(event) => setAlarmVolume(Number(event.target.value))}
+              aria-label="Volumen de la alarma"
+              className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-[var(--accent)]"
+            />
+          </label>
+
+          <p className="text-xs text-slate-500">
+            Notificaciones del navegador:{' '}
+            {!notificationsSupported && 'no disponibles en este navegador.'}
+            {notificationsSupported && notificationPermission === 'granted' && 'permitidas.'}
+            {notificationsSupported && notificationPermission === 'denied' &&
+              'bloqueadas (actívalas desde los ajustes del sitio en tu navegador).'}
+            {notificationsSupported && notificationPermission === 'default' && (
+              <button
+                type="button"
+                onClick={() => Notification.requestPermission()}
+                className="ml-1 underline decoration-dotted hover:text-slate-300"
+              >
+                pedir permiso
+              </button>
+            )}
+          </p>
         </section>
       </div>
     </main>

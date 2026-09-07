@@ -21,6 +21,12 @@ export const useTimerStore = create((set, get) => ({
   mode: 'FOCUS',
   secondsLeft: durationFor('FOCUS'),
   isRunning: false,
+  // completedAt/completedMode marcan el último ciclo que llegó a 00:00,
+  // sin importar si auto-inicio encadenó el siguiente. AlarmManager
+  // (HU-4.3) escucha completedAt para disparar el sonido y la
+  // notificación exactamente una vez por cada intervalo terminado.
+  completedAt: null,
+  completedMode: null,
 
   // Se llama una vez que las preferencias reales terminan de cargar del
   // backend, para que el conteo refleje la duración configurada.
@@ -55,11 +61,13 @@ export const useTimerStore = create((set, get) => ({
     }
 
     const autoStart = useSettingsStore.getState().auto_start;
+    const completedMode = mode;
+    const completedAt = Date.now();
     if (autoStart) {
       const nextMode = NEXT_MODE[mode];
-      set({ mode: nextMode, secondsLeft: durationFor(nextMode), isRunning: true });
+      set({ mode: nextMode, secondsLeft: durationFor(nextMode), isRunning: true, completedMode, completedAt });
     } else {
-      set({ secondsLeft: 0, isRunning: false });
+      set({ secondsLeft: 0, isRunning: false, completedMode, completedAt });
     }
   },
 }));
