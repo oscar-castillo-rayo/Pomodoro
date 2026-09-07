@@ -48,6 +48,7 @@ export default function TasksView() {
     const matchesPriority = priorityFilter === ALL_PRIORITIES || task.priority === priorityFilter;
     return matchesSearch && matchesPriority;
   });
+  const hasNoTasks = tasks.length === 0;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -79,14 +80,14 @@ export default function TasksView() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 py-8">
-        <header>
+    <main className="flex flex-1 flex-col bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+        <div>
           <h1 className="text-lg font-semibold text-slate-100">Tareas enfocadas</h1>
           <p className="text-sm text-slate-500">
             Organiza lo que quieres avanzar en tus próximos ciclos de concentración.
           </p>
-        </header>
+        </div>
 
         <form
           onSubmit={handleSubmit}
@@ -175,11 +176,16 @@ export default function TasksView() {
         {loading ? (
           <p className="text-sm text-slate-500">Cargando tareas…</p>
         ) : visibleTasks.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            {tasks.length === 0
-              ? 'Todavía no tienes tareas. ¡Agrega la primera!'
-              : 'Ninguna tarea coincide con la búsqueda o los filtros.'}
-          </p>
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-800 px-4 py-10 text-center">
+            <span className="text-2xl" aria-hidden="true">
+              {hasNoTasks ? '📝' : '🔍'}
+            </span>
+            <p className="text-sm text-slate-500">
+              {hasNoTasks
+                ? 'Todavía no tienes tareas. ¡Agrega la primera!'
+                : 'Ninguna tarea coincide con la búsqueda o los filtros.'}
+            </p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {visibleTasks.map((task) => (

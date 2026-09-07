@@ -60,14 +60,14 @@ export default function SettingsView() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-6 py-8">
-        <header>
+    <main className="flex flex-1 flex-col bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+        <div>
           <h1 className="text-lg font-semibold text-slate-100">Ajustes del temporizador</h1>
           <p className="text-sm text-slate-500">
             Personaliza la duración de cada ciclo y si quieres que empiecen automáticamente.
           </p>
-        </header>
+        </div>
 
         <form
           onSubmit={handleSubmit}

@@ -67,16 +67,8 @@ export default function Timer() {
   }, [isRunning, tick]);
 
   return (
-    <main className="min-h-screen bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col">
-        <header className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent-soft)] text-lg ring-1 ring-[var(--accent-ring)]">🍅</span>
-            <span className="text-sm font-semibold tracking-wide text-slate-200 sm:text-base">Pomodoro Timer</span>
-          </div>
-          <span className="hidden text-xs text-slate-500 sm:block">Focus one thing at a time.</span>
-        </header>
-
+    <main className="flex flex-1 flex-col bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
         <section className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12">
           <div className="mb-8 flex w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900/70 p-1.5 shadow-2xl shadow-black/20 backdrop-blur sm:mb-10">
             {MODES.map((timerMode) => {
