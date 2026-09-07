@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { TIMER_MODES, useTimerStore } from './store/timerStore';
 
 const MODES = Object.values(TIMER_MODES);
@@ -47,7 +48,19 @@ function ProgressRing({ progress }) {
 export default function Timer() {
   const mode = useTimerStore((state) => state.mode);
   const setMode = useTimerStore((state) => state.setMode);
+  const secondsLeft = useTimerStore((state) => state.secondsLeft);
+  const isRunning = useTimerStore((state) => state.isRunning);
+  const toggle = useTimerStore((state) => state.toggle);
+  const stop = useTimerStore((state) => state.stop);
+  const tick = useTimerStore((state) => state.tick);
   const activeMode = TIMER_MODES[mode];
+  const progress = (activeMode.duration - secondsLeft) / activeMode.duration;
+
+  useEffect(() => {
+    if (!isRunning) return undefined;
+    const intervalId = setInterval(tick, 1000);
+    return () => clearInterval(intervalId);
+  }, [isRunning, tick]);
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
@@ -85,15 +98,32 @@ export default function Timer() {
           </div>
 
           <div className="relative grid place-items-center">
-            <ProgressRing progress={0} />
+            <ProgressRing progress={progress} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
                 {activeMode.label}
               </span>
-              <time className="font-mono text-6xl font-medium tracking-[-0.06em] text-white sm:text-7xl md:text-8xl" dateTime={`PT${activeMode.duration}S`}>
-                {formatTime(activeMode.duration)}
+              <time className="font-mono text-6xl font-medium tracking-[-0.06em] text-white sm:text-7xl md:text-8xl" dateTime={`PT${secondsLeft}S`}>
+                {formatTime(secondsLeft)}
               </time>
             </div>
+          </div>
+
+          <div className="mt-8 flex items-center gap-3 sm:mt-10">
+            <button
+              type="button"
+              onClick={toggle}
+              className="rounded-xl bg-rose-400 px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-rose-400/20 transition-colors hover:bg-rose-300 sm:text-base"
+            >
+              {isRunning ? 'Pausar' : 'Empezar'}
+            </button>
+            <button
+              type="button"
+              onClick={stop}
+              className="rounded-xl border border-slate-700 px-6 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 sm:text-base"
+            >
+              Detener
+            </button>
           </div>
 
           <p className="mt-8 max-w-md text-center text-sm leading-6 text-slate-500 sm:mt-10">
