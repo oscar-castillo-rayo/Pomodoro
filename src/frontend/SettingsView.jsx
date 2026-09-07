@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from './store/settingsStore';
 import { useTimerStore } from './store/timerStore';
+import { ACCENTS, BACKGROUNDS, useThemeStore } from './store/themeStore';
 
-// SettingsView.jsx - Ajuste de duración de los ciclos y auto-inicio (HU-4.1).
-// Persiste en el backend vía PUT /settings; el temporizador vuelve a leer
-// la duración activa desde settingsStore en cada render.
+// SettingsView.jsx - Ajuste de duración de los ciclos y auto-inicio (HU-4.1)
+// y personalización de fondo/color de acento (HU-4.2). Las duraciones
+// persisten en el backend vía PUT /settings; el tema se guarda en
+// localStorage (themeStore) y se aplica como variables CSS en <html>.
 export default function SettingsView() {
   const focusMinutes = useSettingsStore((state) => state.focus_minutes);
   const shortBreakMinutes = useSettingsStore((state) => state.short_break_minutes);
@@ -14,6 +16,11 @@ export default function SettingsView() {
   const error = useSettingsStore((state) => state.error);
   const save = useSettingsStore((state) => state.save);
   const syncDurationWithSettings = useTimerStore((state) => state.syncDurationWithSettings);
+
+  const accent = useThemeStore((state) => state.accent);
+  const background = useThemeStore((state) => state.background);
+  const setAccent = useThemeStore((state) => state.setAccent);
+  const setBackground = useThemeStore((state) => state.setBackground);
 
   const [form, setForm] = useState({
     focus_minutes: focusMinutes,
@@ -47,7 +54,7 @@ export default function SettingsView() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6 py-8">
         <header>
           <h1 className="text-lg font-semibold text-slate-100">Ajustes del temporizador</h1>
@@ -97,14 +104,14 @@ export default function SettingsView() {
               type="checkbox"
               checked={form.auto_start}
               onChange={(event) => updateField('auto_start', event.target.checked)}
-              className="h-4 w-4 accent-rose-400"
+              className="h-4 w-4 accent-[var(--accent)]"
             />
           </label>
 
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-rose-400 px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? 'Guardando…' : 'Guardar preferencias'}
           </button>
@@ -112,6 +119,51 @@ export default function SettingsView() {
           {saved && <p className="text-sm text-emerald-400">Preferencias guardadas.</p>}
           {error && <p className="text-sm text-rose-300">{error}</p>}
         </form>
+
+        <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-2xl shadow-black/20">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-100">Personalización</h2>
+            <p className="text-xs text-slate-500">Elige el color de acento y el fondo de la app.</p>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Color de acento</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(ACCENTS).map(([id, palette]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setAccent(id)}
+                  aria-label={`Acento ${palette.label}`}
+                  aria-pressed={accent === id}
+                  className={`h-8 w-8 rounded-full transition-transform ${
+                    accent === id ? 'ring-2 ring-offset-2 ring-offset-slate-900 scale-110' : 'hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: palette.base, ...(accent === id ? { '--tw-ring-color': palette.base } : {}) }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Fondo</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(BACKGROUNDS).map(([id, option]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setBackground(id)}
+                  aria-label={`Fondo ${option.label}`}
+                  aria-pressed={background === id}
+                  className={`h-8 w-8 rounded-full border border-slate-700 transition-transform ${
+                    background === id ? 'ring-2 ring-offset-2 ring-offset-slate-900 scale-110' : 'hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: option.value, ...(background === id ? { '--tw-ring-color': option.value } : {}) }}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );

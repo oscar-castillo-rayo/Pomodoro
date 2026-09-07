@@ -41,7 +41,7 @@ function ProgressRing({ progress }) {
         strokeLinecap="round"
         strokeDasharray={CIRCUMFERENCE}
         strokeDashoffset={offset}
-        className="text-rose-400 transition-[stroke-dashoffset] duration-500"
+        className="text-[var(--accent)] transition-[stroke-dashoffset] duration-500"
       />
     </svg>
   );
@@ -67,11 +67,11 @@ export default function Timer() {
   }, [isRunning, tick]);
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col">
         <header className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-400/10 text-lg ring-1 ring-rose-400/20">🍅</span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent-soft)] text-lg ring-1 ring-[var(--accent-ring)]">🍅</span>
             <span className="text-sm font-semibold tracking-wide text-slate-200 sm:text-base">Pomodoro Timer</span>
           </div>
           <span className="hidden text-xs text-slate-500 sm:block">Focus one thing at a time.</span>
@@ -117,7 +117,7 @@ export default function Timer() {
             <button
               type="button"
               onClick={toggle}
-              className="rounded-xl bg-rose-400 px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-rose-400/20 transition-colors hover:bg-rose-300 sm:text-base"
+              className="rounded-xl bg-[var(--accent)] px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition-colors hover:bg-[var(--accent-hover)] sm:text-base"
             >
               {isRunning ? 'Pausar' : 'Empezar'}
             </button>
