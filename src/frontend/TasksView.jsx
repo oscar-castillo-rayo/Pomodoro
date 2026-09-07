@@ -3,6 +3,8 @@ import { createTask, deleteTask, fetchTasks } from './api';
 
 const STATUSES = ['Por hacer', 'En curso', 'Hecha'];
 const PRIORITIES = ['Alta', 'Media', 'Baja'];
+const ALL_STATUSES = 'Todas';
+const ALL_PRIORITIES = 'Todas';
 
 const PRIORITY_STYLES = {
   Alta: 'bg-rose-400/10 text-rose-300 ring-1 ring-rose-400/30',
@@ -22,17 +24,30 @@ export default function TasksView() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function loadTasks() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(ALL_STATUSES);
+  const [priorityFilter, setPriorityFilter] = useState(ALL_PRIORITIES);
+
+  function loadTasks(status) {
     setLoading(true);
-    fetchTasks()
+    setError(null);
+    fetchTasks(status === ALL_STATUSES ? undefined : status)
       .then(setTasks)
       .catch(() => setError('No se pudieron cargar las tareas. ¿Está corriendo el backend?'))
       .finally(() => setLoading(false));
   }
 
+  // El filtro por estado se resuelve en el backend (GET /tasks?status=...);
+  // búsqueda por título y filtro por prioridad se resuelven en el frontend.
   useEffect(() => {
-    loadTasks();
-  }, []);
+    loadTasks(statusFilter);
+  }, [statusFilter]);
+
+  const visibleTasks = tasks.filter((task) => {
+    const matchesSearch = task.title.toLowerCase().includes(search.trim().toLowerCase());
+    const matchesPriority = priorityFilter === ALL_PRIORITIES || task.priority === priorityFilter;
+    return matchesSearch && matchesPriority;
+  });
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -42,9 +57,9 @@ export default function TasksView() {
     setSubmitting(true);
     setError(null);
     try {
-      const task = await createTask({ title: trimmedTitle, status, priority });
-      setTasks((current) => [...current, task]);
+      await createTask({ title: trimmedTitle, status, priority });
       setTitle('');
+      loadTasks(statusFilter);
     } catch {
       setError('No se pudo crear la tarea.');
     } finally {
@@ -115,6 +130,42 @@ export default function TasksView() {
           </button>
         </form>
 
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar por título…"
+            className="flex-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-400 focus:outline-none"
+          />
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            aria-label="Filtrar por estado"
+            className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"
+          >
+            <option value={ALL_STATUSES}>Todos los estados</option>
+            {STATUSES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <select
+            value={priorityFilter}
+            onChange={(event) => setPriorityFilter(event.target.value)}
+            aria-label="Filtrar por prioridad"
+            className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"
+          >
+            <option value={ALL_PRIORITIES}>Todas las prioridades</option>
+            {PRIORITIES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {error && (
           <p className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-2 text-sm text-rose-300">
             {error}
@@ -123,11 +174,15 @@ export default function TasksView() {
 
         {loading ? (
           <p className="text-sm text-slate-500">Cargando tareas…</p>
-        ) : tasks.length === 0 ? (
-          <p className="text-sm text-slate-500">Todavía no tienes tareas. ¡Agrega la primera!</p>
+        ) : visibleTasks.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            {tasks.length === 0
+              ? 'Todavía no tienes tareas. ¡Agrega la primera!'
+              : 'Ninguna tarea coincide con la búsqueda o los filtros.'}
+          </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {tasks.map((task) => (
+            {visibleTasks.map((task) => (
               <li
                 key={task.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"
