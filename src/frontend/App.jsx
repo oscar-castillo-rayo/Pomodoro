@@ -1,14 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Timer from './Timer';
 import TasksView from './TasksView';
+import SettingsView from './SettingsView';
+import { useSettingsStore } from './store/settingsStore';
+import { useTimerStore } from './store/timerStore';
 
 const VIEWS = [
   { id: 'timer', label: 'Temporizador' },
   { id: 'tasks', label: 'Tareas' },
+  { id: 'settings', label: 'Ajustes' },
 ];
 
 export default function App() {
   const [view, setView] = useState('timer');
+  const loadSettings = useSettingsStore((state) => state.load);
+  const settingsLoaded = useSettingsStore((state) => state.loaded);
+  const syncDurationWithSettings = useTimerStore((state) => state.syncDurationWithSettings);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  useEffect(() => {
+    if (settingsLoaded) {
+      syncDurationWithSettings();
+    }
+  }, [settingsLoaded, syncDurationWithSettings]);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -30,7 +47,9 @@ export default function App() {
         ))}
       </nav>
 
-      {view === 'timer' ? <Timer /> : <TasksView />}
+      {view === 'timer' && <Timer />}
+      {view === 'tasks' && <TasksView />}
+      {view === 'settings' && <SettingsView />}
     </div>
   );
 }

@@ -35,3 +35,30 @@ def test_create_and_list_task(client):
 def test_delete_missing_task_returns_404(client):
     response = client.delete("/tasks/999999")
     assert response.status_code == 404
+
+
+def test_get_settings_defaults_when_unset(client):
+    response = client.get("/settings")
+    assert response.status_code == 200
+    assert response.json() == {
+        "focus_minutes": 25,
+        "short_break_minutes": 5,
+        "long_break_minutes": 15,
+        "auto_start": False,
+    }
+
+
+def test_update_and_get_settings_persists(client):
+    payload = {
+        "focus_minutes": 50,
+        "short_break_minutes": 10,
+        "long_break_minutes": 20,
+        "auto_start": True,
+    }
+    updated = client.put("/settings", json=payload)
+    assert updated.status_code == 200
+    assert updated.json() == payload
+
+    fetched = client.get("/settings")
+    assert fetched.status_code == 200
+    assert fetched.json() == payload

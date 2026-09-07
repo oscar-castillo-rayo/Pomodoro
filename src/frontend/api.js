@@ -26,6 +26,10 @@ export function deleteTask(id) {
   return request(`/tasks/${id}`, { method: 'DELETE' });
 }
 
+export function fetchSettings() {
+  return request('/settings');
+}
+
 export function updateSettings(payload) {
   return request('/settings', { method: 'PUT', body: JSON.stringify(payload) });
 }

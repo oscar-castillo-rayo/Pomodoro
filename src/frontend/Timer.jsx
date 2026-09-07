@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import MusicPlayer from './MusicPlayer';
 import { TIMER_MODES, useTimerStore } from './store/timerStore';
+import { useSettingsStore } from './store/settingsStore';
 
 const MODES = Object.values(TIMER_MODES);
 const RADIUS = 46;
@@ -55,7 +56,9 @@ export default function Timer() {
   const stop = useTimerStore((state) => state.stop);
   const tick = useTimerStore((state) => state.tick);
   const activeMode = TIMER_MODES[mode];
-  const progress = (activeMode.duration - secondsLeft) / activeMode.duration;
+  const activeMinutes = useSettingsStore((state) => state[activeMode.settingsKey]);
+  const activeDuration = activeMinutes * 60;
+  const progress = activeDuration > 0 ? (activeDuration - secondsLeft) / activeDuration : 0;
 
   useEffect(() => {
     if (!isRunning) return undefined;
@@ -129,10 +132,10 @@ export default function Timer() {
 
           <p className="mt-8 max-w-md text-center text-sm leading-6 text-slate-500 sm:mt-10">
             {mode === 'FOCUS'
-              ? 'Un intervalo de concentración de 25 minutos para avanzar sin distracciones.'
+              ? `Un intervalo de concentración de ${activeMinutes} minutos para avanzar sin distracciones.`
               : mode === 'SHORT'
-                ? 'Tómate cinco minutos para despejar la mente y volver con energía.'
-                : 'Quince minutos para desconectar, descansar y prepararte para el siguiente ciclo.'}
+                ? `Tómate ${activeMinutes} minutos para despejar la mente y volver con energía.`
+                : `${activeMinutes} minutos para desconectar, descansar y prepararte para el siguiente ciclo.`}
           </p>
 
           <MusicPlayer />

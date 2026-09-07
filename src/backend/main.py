@@ -38,6 +38,13 @@ class SettingsIn(BaseModel):
     long_break_minutes: int
     auto_start: bool = False
 
+class SettingsOut(SettingsIn):
+    pass
+
+DEFAULT_SETTINGS = SettingsOut(
+    focus_minutes=25, short_break_minutes=5, long_break_minutes=15, auto_start=False
+)
+
 @app.post('/tasks', response_model=TaskOut)
 def create_task(payload: TaskIn):
     db: Session = database.SessionLocal()
@@ -70,7 +77,14 @@ def delete_task(task_id: int):
     db.close()
     return {"ok": True}
 
-@app.put('/settings')
+@app.get('/settings', response_model=SettingsOut)
+def get_settings():
+    db: Session = database.SessionLocal()
+    settings = db.query(models.Settings).first()
+    db.close()
+    return settings if settings else DEFAULT_SETTINGS
+
+@app.put('/settings', response_model=SettingsOut)
 def update_settings(s: SettingsIn):
     db: Session = database.SessionLocal()
     settings = db.query(models.Settings).first()
@@ -88,5 +102,6 @@ def update_settings(s: SettingsIn):
         settings.long_break_minutes = s.long_break_minutes
         settings.auto_start = s.auto_start
     db.commit()
+    db.refresh(settings)
     db.close()
-    return {"ok": True}
+    return settings
