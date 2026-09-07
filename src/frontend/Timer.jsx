@@ -1,90 +1,114 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { TIMER_MODES, useTimerStore } from './store/timerStore';
 
-// Timer.jsx - Componente simple de temporizador Pomodoro
-export default function Timer() {
-  const MODES = {
-    FOCUS: { label: 'Concentración', seconds: 25 * 60 },
-    SHORT: { label: 'Descanso corto', seconds: 5 * 60 },
-    LONG: { label: 'Descanso largo', seconds: 15 * 60 },
-  };
+const MODES = Object.values(TIMER_MODES);
+const RADIUS = 46;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-  const [mode, setMode] = useState('FOCUS');
-  const [secondsLeft, setSecondsLeft] = useState(MODES.FOCUS.seconds);
-  const [running, setRunning] = useState(false);
-  const intervalRef = useRef(null);
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
 
-  useEffect(() => {
-    setSecondsLeft(MODES[mode].seconds);
-  }, [mode]);
-
-  useEffect(() => {
-    if (!running) return;
-    intervalRef.current = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(intervalRef.current);
-          setRunning(false);
-          // TODO: disparar notificación y alarma
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(intervalRef.current);
-  }, [running]);
-
-  function startPause() {
-    setRunning((r) => !r);
-  }
-
-  function stop() {
-    setRunning(false);
-    setSecondsLeft(MODES[mode].seconds);
-    clearInterval(intervalRef.current);
-  }
-
-  function formatMMSS(sec) {
-    const m = String(Math.floor(sec / 60)).padStart(2, '0');
-    const s = String(sec % 60).padStart(2, '0');
-    return `${m}:${s}`;
-  }
-
-  const total = MODES[mode].seconds;
-  const progress = ((total - secondsLeft) / total) * 100;
+function ProgressRing({ progress }) {
+  const offset = CIRCUMFERENCE * (1 - progress);
 
   return (
-    <div className="timer-component">
-      <div className="modes">
-        {Object.keys(MODES).map((k) => (
-          <button key={k} onClick={() => setMode(k)} className={k === mode ? 'active' : ''}>
-            {MODES[k].label}
-          </button>
-        ))}
-      </div>
+    <svg
+      className="h-[min(78vw,360px)] w-[min(78vw,360px)] max-w-full -rotate-90"
+      viewBox="0 0 110 110"
+      aria-hidden="true"
+    >
+      <circle
+        cx="55"
+        cy="55"
+        r={RADIUS}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        className="text-slate-800"
+      />
+      <circle
+        cx="55"
+        cy="55"
+        r={RADIUS}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={CIRCUMFERENCE}
+        strokeDashoffset={offset}
+        className="text-rose-400 transition-[stroke-dashoffset] duration-500"
+      />
+    </svg>
+  );
+}
 
-      <div className="clock">
-        <svg viewBox="0 0 100 100" className="progress-ring">
-          <circle cx="50" cy="50" r="45" stroke="#e5e7eb" strokeWidth="8" fill="none" />
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            stroke="#ef4444"
-            strokeWidth="8"
-            fill="none"
-            strokeDasharray={`${Math.PI * 2 * 45}`}
-            strokeDashoffset={`${Math.PI * 2 * 45 * (1 - progress / 100)}`}
-            transform="rotate(-90 50 50)"
-          />
-        </svg>
-        <div className="time-display">{formatMMSS(secondsLeft)}</div>
-      </div>
+export default function Timer() {
+  const mode = useTimerStore((state) => state.mode);
+  const setMode = useTimerStore((state) => state.setMode);
+  const activeMode = TIMER_MODES[mode];
 
-      <div className="controls">
-        <button onClick={startPause}>{running ? 'Pausar' : 'Empezar'}</button>
-        <button onClick={stop}>Detener</button>
+  return (
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col">
+        <header className="flex items-center justify-between py-2">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-rose-400/10 text-lg ring-1 ring-rose-400/20">🍅</span>
+            <span className="text-sm font-semibold tracking-wide text-slate-200 sm:text-base">Pomodoro Timer</span>
+          </div>
+          <span className="hidden text-xs text-slate-500 sm:block">Focus one thing at a time.</span>
+        </header>
+
+        <section className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12">
+          <div className="mb-8 flex w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900/70 p-1.5 shadow-2xl shadow-black/20 backdrop-blur sm:mb-10">
+            {MODES.map((timerMode) => {
+              const isActive = timerMode.id === mode;
+
+              return (
+                <button
+                  key={timerMode.id}
+                  type="button"
+                  onClick={() => setMode(timerMode.id)}
+                  aria-pressed={isActive}
+                  className={`flex-1 rounded-xl px-2 py-2.5 text-xs font-medium transition-all sm:px-4 sm:py-3 sm:text-sm ${
+                    isActive
+                      ? 'bg-slate-800 text-white shadow-sm ring-1 ring-slate-700'
+                      : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
+                  }`}
+                >
+                  <span className="sm:hidden">{timerMode.shortLabel}</span>
+                  <span className="hidden sm:inline">{timerMode.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative grid place-items-center">
+            <ProgressRing progress={0} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
+                {activeMode.label}
+              </span>
+              <time className="font-mono text-6xl font-medium tracking-[-0.06em] text-white sm:text-7xl md:text-8xl" dateTime={`PT${activeMode.duration}S`}>
+                {formatTime(activeMode.duration)}
+              </time>
+            </div>
+          </div>
+
+          <p className="mt-8 max-w-md text-center text-sm leading-6 text-slate-500 sm:mt-10">
+            {mode === 'FOCUS'
+              ? 'Un intervalo de concentración de 25 minutos para avanzar sin distracciones.'
+              : mode === 'SHORT'
+                ? 'Tómate cinco minutos para despejar la mente y volver con energía.'
+                : 'Quince minutos para desconectar, descansar y prepararte para el siguiente ciclo.'}
+          </p>
+        </section>
+
+        <footer className="py-3 text-center text-xs text-slate-600">
+          Selecciona un modo para comenzar tu próximo intervalo.
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }

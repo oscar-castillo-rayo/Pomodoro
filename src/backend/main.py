@@ -1,10 +1,28 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from . import models, database
 
-app = FastAPI()
+app = FastAPI(title="Pomodoro API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+def on_startup():
+    database.init_db()
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
 
 class TaskIn(BaseModel):
     title: str
