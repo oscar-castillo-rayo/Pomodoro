@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import MusicPlayer from './MusicPlayer';
 import { TIMER_MODES, useTimerStore } from './store/timerStore';
 
 const MODES = Object.values(TIMER_MODES);
@@ -133,6 +134,8 @@ export default function Timer() {
                 ? 'Tómate cinco minutos para despejar la mente y volver con energía.'
                 : 'Quince minutos para desconectar, descansar y prepararte para el siguiente ciclo.'}
           </p>
+
+          <MusicPlayer />
         </section>
 
         <footer className="py-3 text-center text-xs text-slate-600">
