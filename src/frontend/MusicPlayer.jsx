@@ -58,7 +58,7 @@ export default function MusicPlayer() {
             type="button"
             onClick={toggle}
             aria-label={isPlaying ? 'Pausar música' : 'Reproducir música'}
-            className="grid h-10 w-10 place-items-center rounded-xl bg-rose-400 text-slate-950 transition-colors hover:bg-rose-300"
+            className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)] text-slate-950 transition-colors hover:bg-[var(--accent-hover)]"
           >
             {isPlaying ? '⏸' : '▶'}
           </button>
@@ -85,7 +85,7 @@ export default function MusicPlayer() {
           value={volume}
           onChange={(event) => setVolume(Number(event.target.value))}
           aria-label="Volumen de la música"
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-rose-400"
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-[var(--accent)]"
         />
       </div>
     </section>

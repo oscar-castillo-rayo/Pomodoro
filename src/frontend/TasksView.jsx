@@ -79,7 +79,7 @@ export default function TasksView() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 py-8">
         <header>
           <h1 className="text-lg font-semibold text-slate-100">Tareas enfocadas</h1>
@@ -97,7 +97,7 @@ export default function TasksView() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="¿Qué quieres hacer?"
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-400 focus:outline-none"
+            className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[var(--accent)] focus:outline-none"
           />
           <select
             value={status}
@@ -124,7 +124,7 @@ export default function TasksView() {
           <button
             type="submit"
             disabled={submitting || !title.trim()}
-            className="rounded-xl bg-rose-400 px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Agregar
           </button>
@@ -136,7 +136,7 @@ export default function TasksView() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar por título…"
-            className="flex-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-400 focus:outline-none"
+            className="flex-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[var(--accent)] focus:outline-none"
           />
           <select
             value={statusFilter}

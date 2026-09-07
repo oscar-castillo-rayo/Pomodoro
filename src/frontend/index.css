@@ -6,6 +6,15 @@
   background: #0b1120;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+
+  /* Personalización de UI (HU-4.2): themeStore actualiza estas variables
+     en tiempo real; los componentes las consumen con clases arbitrarias
+     de Tailwind, por ejemplo bg-[var(--accent)]. */
+  --app-bg: #020617;
+  --accent: #fb7185;
+  --accent-hover: #fda4af;
+  --accent-soft: rgb(251 113 133 / 0.1);
+  --accent-ring: rgb(251 113 133 / 0.25);
 }
 
 * {
