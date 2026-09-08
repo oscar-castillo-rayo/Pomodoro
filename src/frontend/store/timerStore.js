@@ -12,6 +12,15 @@ export const TIMER_MODES = {
 // se elige manualmente desde las pestañas.
 const NEXT_MODE = { FOCUS: 'SHORT', SHORT: 'FOCUS', LONG: 'FOCUS' };
 
+// Interruptor de auto-inicio correspondiente al modo que ACABA de
+// terminar: terminar un FOCUS auto-inicia el descanso; terminar un
+// descanso (corto o largo) auto-inicia la concentración.
+const AUTO_START_SETTING_FOR = {
+  FOCUS: 'auto_start_break',
+  SHORT: 'auto_start_focus',
+  LONG: 'auto_start_focus',
+};
+
 function durationFor(mode) {
   const minutes = useSettingsStore.getState()[TIMER_MODES[mode].settingsKey];
   return minutes * 60;
@@ -89,7 +98,7 @@ export const useTimerStore = create((set, get) => ({
       return;
     }
 
-    const autoStart = useSettingsStore.getState().auto_start;
+    const autoStart = useSettingsStore.getState()[AUTO_START_SETTING_FOR[mode]];
     const completedMode = mode;
     const completedAt = Date.now();
     if (autoStart) {
@@ -104,7 +113,11 @@ export const useTimerStore = create((set, get) => ({
         completedAt,
       });
     } else {
-      set({ secondsLeft: 0, isRunning: false, endsAt: null, completedMode, completedAt });
+      // Sin auto-inicio: vuelve al estado "listo para empezar" del mismo
+      // modo (duración completa) en vez de quedarse pegado en 00:00 con
+      // los controles de sesión activa — igual que si el usuario hubiera
+      // presionado "Detener".
+      set({ secondsLeft: durationFor(mode), isRunning: false, endsAt: null, completedMode, completedAt });
     }
   },
 }));
