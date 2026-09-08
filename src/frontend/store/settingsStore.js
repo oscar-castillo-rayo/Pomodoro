@@ -5,7 +5,8 @@ export const DEFAULT_SETTINGS = {
   focus_minutes: 25,
   short_break_minutes: 5,
   long_break_minutes: 15,
-  auto_start: false,
+  auto_start_break: false,
+  auto_start_focus: false,
 };
 
 export const useSettingsStore = create((set, get) => ({
@@ -32,7 +33,8 @@ export const useSettingsStore = create((set, get) => ({
         focus_minutes: next.focus_minutes,
         short_break_minutes: next.short_break_minutes,
         long_break_minutes: next.long_break_minutes,
-        auto_start: next.auto_start,
+        auto_start_break: next.auto_start_break,
+        auto_start_focus: next.auto_start_focus,
       });
       set({ ...saved, saving: false });
       return true;

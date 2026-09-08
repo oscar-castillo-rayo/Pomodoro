@@ -36,13 +36,18 @@ class SettingsIn(BaseModel):
     focus_minutes: int
     short_break_minutes: int
     long_break_minutes: int
-    auto_start: bool = False
+    auto_start_break: bool = False
+    auto_start_focus: bool = False
 
 class SettingsOut(SettingsIn):
     pass
 
 DEFAULT_SETTINGS = SettingsOut(
-    focus_minutes=25, short_break_minutes=5, long_break_minutes=15, auto_start=False
+    focus_minutes=25,
+    short_break_minutes=5,
+    long_break_minutes=15,
+    auto_start_break=False,
+    auto_start_focus=False,
 )
 
 @app.post('/tasks', response_model=TaskOut)
@@ -93,14 +98,16 @@ def update_settings(s: SettingsIn):
             focus_minutes=s.focus_minutes,
             short_break_minutes=s.short_break_minutes,
             long_break_minutes=s.long_break_minutes,
-            auto_start=s.auto_start,
+            auto_start_break=s.auto_start_break,
+            auto_start_focus=s.auto_start_focus,
         )
         db.add(settings)
     else:
         settings.focus_minutes = s.focus_minutes
         settings.short_break_minutes = s.short_break_minutes
         settings.long_break_minutes = s.long_break_minutes
-        settings.auto_start = s.auto_start
+        settings.auto_start_break = s.auto_start_break
+        settings.auto_start_focus = s.auto_start_focus
     db.commit()
     db.refresh(settings)
     db.close()

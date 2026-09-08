@@ -18,4 +18,5 @@ class Settings(Base):
     focus_minutes = Column(Integer, default=25)
     short_break_minutes = Column(Integer, default=5)
     long_break_minutes = Column(Integer, default=15)
-    auto_start = Column(Boolean, default=False)
+    auto_start_break = Column(Boolean, default=False)
+    auto_start_focus = Column(Boolean, default=False)

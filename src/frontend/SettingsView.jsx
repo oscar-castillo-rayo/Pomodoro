@@ -12,7 +12,8 @@ export default function SettingsView() {
   const focusMinutes = useSettingsStore((state) => state.focus_minutes);
   const shortBreakMinutes = useSettingsStore((state) => state.short_break_minutes);
   const longBreakMinutes = useSettingsStore((state) => state.long_break_minutes);
-  const autoStart = useSettingsStore((state) => state.auto_start);
+  const autoStartBreak = useSettingsStore((state) => state.auto_start_break);
+  const autoStartFocus = useSettingsStore((state) => state.auto_start_focus);
   const saving = useSettingsStore((state) => state.saving);
   const error = useSettingsStore((state) => state.error);
   const save = useSettingsStore((state) => state.save);
@@ -33,7 +34,8 @@ export default function SettingsView() {
     focus_minutes: focusMinutes,
     short_break_minutes: shortBreakMinutes,
     long_break_minutes: longBreakMinutes,
-    auto_start: autoStart,
+    auto_start_break: autoStartBreak,
+    auto_start_focus: autoStartFocus,
   });
   const [saved, setSaved] = useState(false);
 
@@ -42,9 +44,10 @@ export default function SettingsView() {
       focus_minutes: focusMinutes,
       short_break_minutes: shortBreakMinutes,
       long_break_minutes: longBreakMinutes,
-      auto_start: autoStart,
+      auto_start_break: autoStartBreak,
+      auto_start_focus: autoStartFocus,
     });
-  }, [focusMinutes, shortBreakMinutes, longBreakMinutes, autoStart]);
+  }, [focusMinutes, shortBreakMinutes, longBreakMinutes, autoStartBreak, autoStartFocus]);
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -114,11 +117,20 @@ export default function SettingsView() {
           </label>
 
           <label className="flex items-center justify-between gap-4 text-sm text-slate-300">
-            Auto-inicio del siguiente ciclo
+            Auto-iniciar descanso
             <input
               type="checkbox"
-              checked={form.auto_start}
-              onChange={(event) => updateField('auto_start', event.target.checked)}
+              checked={form.auto_start_break}
+              onChange={(event) => updateField('auto_start_break', event.target.checked)}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-4 text-sm text-slate-300">
+            Auto-iniciar concentración
+            <input
+              type="checkbox"
+              checked={form.auto_start_focus}
+              onChange={(event) => updateField('auto_start_focus', event.target.checked)}
               className="h-4 w-4 accent-[var(--accent)]"
             />
           </label>

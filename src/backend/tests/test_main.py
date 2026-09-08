@@ -44,7 +44,8 @@ def test_get_settings_defaults_when_unset(client):
         "focus_minutes": 25,
         "short_break_minutes": 5,
         "long_break_minutes": 15,
-        "auto_start": False,
+        "auto_start_break": False,
+        "auto_start_focus": False,
     }
 
 
@@ -53,7 +54,8 @@ def test_update_and_get_settings_persists(client):
         "focus_minutes": 50,
         "short_break_minutes": 10,
         "long_break_minutes": 20,
-        "auto_start": True,
+        "auto_start_break": True,
+        "auto_start_focus": False,
     }
     updated = client.put("/settings", json=payload)
     assert updated.status_code == 200
