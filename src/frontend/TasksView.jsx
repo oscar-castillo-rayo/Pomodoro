@@ -80,7 +80,7 @@ export default function TasksView() {
   }
 
   return (
-    <main className="flex flex-1 flex-col bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+    <main className="flex flex-1 flex-col px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
         <div>
           <h1 className="text-lg font-semibold text-slate-100">Tareas enfocadas</h1>

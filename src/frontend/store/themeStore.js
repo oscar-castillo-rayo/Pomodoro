@@ -25,9 +25,29 @@ export const useThemeStore = create(
   persist(
     (set) => ({
       accent: 'rose',
+      // `background` es la clave de un preset de BACKGROUNDS, o el `id`
+      // de una entrada en `customBackgrounds` (imagen propia).
       background: 'midnight',
+      // Imágenes propias subidas por el usuario, como data URL. Se
+      // guardan en localStorage junto con el resto del tema.
+      customBackgrounds: [],
+
       setAccent: (accent) => set({ accent }),
       setBackground: (background) => set({ background }),
+
+      addCustomBackground: (dataUrl) => {
+        const id = `custom-${Date.now()}`;
+        set((state) => ({
+          customBackgrounds: [...state.customBackgrounds, { id, dataUrl }],
+          background: id,
+        }));
+      },
+
+      removeCustomBackground: (id) =>
+        set((state) => ({
+          customBackgrounds: state.customBackgrounds.filter((bg) => bg.id !== id),
+          background: state.background === id ? 'midnight' : state.background,
+        })),
     }),
     { name: 'pomodoro-theme' },
   ),
