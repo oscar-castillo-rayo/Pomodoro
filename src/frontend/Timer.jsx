@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import MusicPlayer from './MusicPlayer';
 import { TIMER_MODES, useTimerStore } from './store/timerStore';
 import { useSettingsStore } from './store/settingsStore';
+import { useFocusStore } from './store/focusStore';
+import { addFocusTime } from './api';
 
 const MODES = Object.values(TIMER_MODES);
 const MODE_IDS = MODES.map((m) => m.id);
@@ -66,6 +68,41 @@ export default function Timer() {
   // oculta el botón grande "Empezar" y el anillo crece, para una vista
   // más minimalista una vez que ya empezaste a trabajar.
   const isActive = isRunning || secondsLeft !== activeDuration;
+
+  const focusedTask = useFocusStore((state) => state.focusedTask);
+  const clearFocusedTask = useFocusStore((state) => state.clearFocusedTask);
+
+  // Acumula tiempo de concentración en la tarea enfocada mientras el
+  // modo activo es FOCUS y el temporizador corre. Se envía al backend en
+  // un solo lote al pausar/detener/cambiar de modo (o al desmontar la
+  // vista) en vez de en cada tick, para no llamar a la API cada segundo.
+  const focusStartRef = useRef(null);
+  const trackingFocusId = mode === 'FOCUS' && isRunning ? focusedTask?.id : null;
+
+  useEffect(() => {
+    if (trackingFocusId) {
+      focusStartRef.current = { id: trackingFocusId, startedAt: Date.now() };
+      return undefined;
+    }
+    const tracked = focusStartRef.current;
+    focusStartRef.current = null;
+    if (!tracked) return undefined;
+    const elapsed = Math.round((Date.now() - tracked.startedAt) / 1000);
+    if (elapsed > 0) addFocusTime(tracked.id, elapsed).catch(() => {});
+    return undefined;
+  }, [trackingFocusId]);
+
+  // Si se cierra/recarga la pestaña a mitad de un ciclo enfocado, intenta
+  // avisar al backend igual (best-effort, puede no llegar a completarse).
+  useEffect(
+    () => () => {
+      const tracked = focusStartRef.current;
+      if (!tracked) return;
+      const elapsed = Math.round((Date.now() - tracked.startedAt) / 1000);
+      if (elapsed > 0) addFocusTime(tracked.id, elapsed).catch(() => {});
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!isRunning) return undefined;
@@ -151,6 +188,21 @@ export default function Timer() {
               );
             })}
           </div>
+
+          {focusedTask && (
+            <div className="mb-4 flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs text-slate-300">
+              <span aria-hidden="true">🎯</span>
+              <span className="max-w-[16rem] truncate">{focusedTask.title}</span>
+              <button
+                type="button"
+                onClick={clearFocusedTask}
+                aria-label="Quitar tarea enfocada"
+                className="text-slate-500 hover:text-rose-300"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           <div className="relative grid place-items-center">
             <ProgressRing progress={progress} large={isActive} />

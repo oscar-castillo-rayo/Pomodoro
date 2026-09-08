@@ -31,6 +31,15 @@ class TaskIn(BaseModel):
 
 class TaskOut(TaskIn):
     id: int
+    focus_seconds: int = 0
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+
+class FocusTimeIn(BaseModel):
+    seconds: int
 
 class SettingsIn(BaseModel):
     focus_minutes: int
@@ -69,6 +78,38 @@ def list_tasks(status: Optional[str] = None):
     results = query.all()
     db.close()
     return results
+
+@app.put('/tasks/{task_id}', response_model=TaskOut)
+def update_task(task_id: int, payload: TaskUpdate):
+    db: Session = database.SessionLocal()
+    task = db.query(models.Task).get(task_id)
+    if not task:
+        db.close()
+        raise HTTPException(status_code=404, detail='Task not found')
+    if payload.title is not None:
+        task.title = payload.title
+    if payload.status is not None:
+        task.status = payload.status
+    if payload.priority is not None:
+        task.priority = payload.priority
+    db.commit()
+    db.refresh(task)
+    db.close()
+    return task
+
+@app.post('/tasks/{task_id}/focus', response_model=TaskOut)
+def add_focus_time(task_id: int, payload: FocusTimeIn):
+    db: Session = database.SessionLocal()
+    task = db.query(models.Task).get(task_id)
+    if not task:
+        db.close()
+        raise HTTPException(status_code=404, detail='Task not found')
+    if payload.seconds > 0:
+        task.focus_seconds = (task.focus_seconds or 0) + payload.seconds
+        db.commit()
+        db.refresh(task)
+    db.close()
+    return task
 
 @app.delete('/tasks/{task_id}')
 def delete_task(task_id: int):

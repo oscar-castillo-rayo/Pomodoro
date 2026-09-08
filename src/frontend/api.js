@@ -26,6 +26,14 @@ export function deleteTask(id) {
   return request(`/tasks/${id}`, { method: 'DELETE' });
 }
 
+export function updateTask(id, payload) {
+  return request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+export function addFocusTime(id, seconds) {
+  return request(`/tasks/${id}/focus`, { method: 'POST', body: JSON.stringify({ seconds }) });
+}
+
 export function fetchSettings() {
   return request('/settings');
 }

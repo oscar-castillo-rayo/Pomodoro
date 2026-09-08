@@ -10,6 +10,9 @@ class Task(Base):
     title = Column(String, nullable=False)
     status = Column(String, default='Por hacer')
     priority = Column(String, default='Media')
+    # Segundos de concentración acumulados mientras esta tarea estuvo
+    # "enfocada" durante un ciclo de Concentración (issue de enfocar tarea).
+    focus_seconds = Column(Integer, default=0)
 
 
 class Settings(Base):
