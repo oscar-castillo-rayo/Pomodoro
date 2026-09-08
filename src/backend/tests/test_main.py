@@ -37,6 +37,42 @@ def test_delete_missing_task_returns_404(client):
     assert response.status_code == 404
 
 
+def test_update_task_fields(client):
+    created = client.post("/tasks", json={"title": "Original"}).json()
+
+    updated = client.put(f"/tasks/{created['id']}", json={"status": "Hecha"})
+    assert updated.status_code == 200
+    body = updated.json()
+    assert body["status"] == "Hecha"
+    assert body["title"] == "Original"  # campos no enviados no cambian
+
+    client.delete(f"/tasks/{created['id']}")
+
+
+def test_update_missing_task_returns_404(client):
+    response = client.put("/tasks/999999", json={"status": "Hecha"})
+    assert response.status_code == 404
+
+
+def test_add_focus_time_accumulates(client):
+    created = client.post("/tasks", json={"title": "Enfocar esto"}).json()
+    assert created["focus_seconds"] == 0
+
+    first = client.post(f"/tasks/{created['id']}/focus", json={"seconds": 30})
+    assert first.status_code == 200
+    assert first.json()["focus_seconds"] == 30
+
+    second = client.post(f"/tasks/{created['id']}/focus", json={"seconds": 15})
+    assert second.json()["focus_seconds"] == 45
+
+    client.delete(f"/tasks/{created['id']}")
+
+
+def test_add_focus_time_missing_task_returns_404(client):
+    response = client.post("/tasks/999999/focus", json={"seconds": 10})
+    assert response.status_code == 404
+
+
 def test_get_settings_defaults_when_unset(client):
     response = client.get("/settings")
     assert response.status_code == 200

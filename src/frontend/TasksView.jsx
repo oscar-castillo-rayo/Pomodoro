@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createTask, deleteTask, fetchTasks } from './api';
+import { useFocusStore } from './store/focusStore';
 
 const STATUSES = ['Por hacer', 'En curso', 'Hecha'];
 const PRIORITIES = ['Alta', 'Media', 'Baja'];
@@ -11,6 +12,15 @@ const PRIORITY_STYLES = {
   Media: 'bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/30',
   Baja: 'bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/30',
 };
+
+function formatFocusTime(totalSeconds) {
+  if (!totalSeconds) return null;
+  const minutes = Math.floor(totalSeconds / 60);
+  if (minutes < 1) return `${totalSeconds}s de enfoque`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 1) return `${minutes}m de enfoque`;
+  return `${hours}h ${minutes % 60}m de enfoque`;
+}
 
 // TasksView.jsx - Gestión de tareas enfocadas (HU-3.1): crear, listar y
 // eliminar tareas contra la API de FastAPI. Sin fecha límite ni etiquetas
@@ -27,6 +37,10 @@ export default function TasksView() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(ALL_STATUSES);
   const [priorityFilter, setPriorityFilter] = useState(ALL_PRIORITIES);
+
+  const focusedTask = useFocusStore((state) => state.focusedTask);
+  const setFocusedTask = useFocusStore((state) => state.setFocusedTask);
+  const clearFocusedTask = useFocusStore((state) => state.clearFocusedTask);
 
   function loadTasks(status) {
     setLoading(true);
@@ -73,6 +87,7 @@ export default function TasksView() {
     setTasks((current) => current.filter((task) => task.id !== id));
     try {
       await deleteTask(id);
+      if (focusedTask?.id === id) clearFocusedTask();
     } catch {
       setTasks(previous);
       setError('No se pudo eliminar la tarea.');
@@ -188,32 +203,54 @@ export default function TasksView() {
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {visibleTasks.map((task) => (
-              <li
-                key={task.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-100">{task.title}</p>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
-                      {task.status}
-                    </span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${PRIORITY_STYLES[task.priority]}`}>
-                      {task.priority}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(task.id)}
-                  aria-label={`Eliminar tarea ${task.title}`}
-                  className="shrink-0 rounded-lg px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-800 hover:text-rose-300"
+            {visibleTasks.map((task) => {
+              const isFocused = focusedTask?.id === task.id;
+              const focusLabel = formatFocusTime(task.focus_seconds);
+              return (
+                <li
+                  key={task.id}
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                    isFocused
+                      ? 'border-[var(--accent)] bg-[var(--accent-soft)]'
+                      : 'border-slate-800 bg-slate-900/70'
+                  }`}
                 >
-                  Eliminar
-                </button>
-              </li>
-            ))}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-100">{task.title}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
+                        {task.status}
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${PRIORITY_STYLES[task.priority]}`}>
+                        {task.priority}
+                      </span>
+                      {focusLabel && <span className="text-xs text-slate-500">{focusLabel}</span>}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => (isFocused ? clearFocusedTask() : setFocusedTask({ id: task.id, title: task.title }))}
+                      className={`rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+                        isFocused
+                          ? 'text-[var(--accent)] hover:bg-slate-800'
+                          : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                      }`}
+                    >
+                      {isFocused ? '● Enfocada' : 'Enfocar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(task.id)}
+                      aria-label={`Eliminar tarea ${task.title}`}
+                      className="rounded-lg px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-800 hover:text-rose-300"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
