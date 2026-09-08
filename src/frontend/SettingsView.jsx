@@ -3,6 +3,7 @@ import { useSettingsStore } from './store/settingsStore';
 import { useTimerStore } from './store/timerStore';
 import { ACCENTS, BACKGROUNDS, useThemeStore } from './store/themeStore';
 import { useAlarmStore } from './store/alarmStore';
+import { fileToResizedDataUrl } from './imageUtils';
 
 // SettingsView.jsx - Ajuste de duración de los ciclos y auto-inicio (HU-4.1)
 // y personalización de fondo/color de acento (HU-4.2). Las duraciones
@@ -22,8 +23,25 @@ export default function SettingsView() {
 
   const accent = useThemeStore((state) => state.accent);
   const background = useThemeStore((state) => state.background);
+  const customBackgrounds = useThemeStore((state) => state.customBackgrounds);
   const setAccent = useThemeStore((state) => state.setAccent);
   const setBackground = useThemeStore((state) => state.setBackground);
+  const addCustomBackground = useThemeStore((state) => state.addCustomBackground);
+  const removeCustomBackground = useThemeStore((state) => state.removeCustomBackground);
+  const [uploadError, setUploadError] = useState(null);
+
+  async function handleBackgroundUpload(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploadError(null);
+    try {
+      const dataUrl = await fileToResizedDataUrl(file);
+      addCustomBackground(dataUrl);
+    } catch {
+      setUploadError('No se pudo cargar la imagen. Probá con otro archivo.');
+    }
+  }
 
   const alarmVolume = useAlarmStore((state) => state.volume);
   const setAlarmVolume = useAlarmStore((state) => state.setVolume);
@@ -64,7 +82,7 @@ export default function SettingsView() {
   }
 
   return (
-    <main className="flex flex-1 flex-col bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+    <main className="flex flex-1 flex-col px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6">
         <div>
           <h1 className="text-lg font-semibold text-slate-100">Ajustes del temporizador</h1>
@@ -174,7 +192,7 @@ export default function SettingsView() {
 
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Fondo</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {Object.entries(BACKGROUNDS).map(([id, option]) => (
                 <button
                   key={id}
@@ -188,7 +206,36 @@ export default function SettingsView() {
                   style={{ backgroundColor: option.value, ...(background === id ? { '--tw-ring-color': option.value } : {}) }}
                 />
               ))}
+
+              {customBackgrounds.map((bg) => (
+                <div key={bg.id} className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => setBackground(bg.id)}
+                    aria-label="Fondo propio"
+                    aria-pressed={background === bg.id}
+                    className={`h-8 w-8 rounded-full border border-slate-700 bg-cover bg-center transition-transform ${
+                      background === bg.id ? 'ring-2 ring-offset-2 ring-offset-slate-900 scale-110' : 'hover:scale-105'
+                    }`}
+                    style={{ backgroundImage: `url("${bg.dataUrl}")` }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCustomBackground(bg.id)}
+                    aria-label="Quitar este fondo"
+                    className="absolute -right-1 -top-1 hidden h-4 w-4 place-items-center rounded-full bg-slate-800 text-[10px] text-slate-300 hover:bg-rose-500 hover:text-white group-hover:grid"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+              <label className="grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-dashed border-slate-600 text-sm text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-300">
+                +
+                <input type="file" accept="image/*" onChange={handleBackgroundUpload} className="hidden" />
+              </label>
             </div>
+            {uploadError && <p className="mt-2 text-xs text-rose-300">{uploadError}</p>}
           </div>
         </section>
 

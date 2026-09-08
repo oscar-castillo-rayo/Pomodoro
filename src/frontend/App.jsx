@@ -21,6 +21,7 @@ export default function App() {
   const syncDurationWithSettings = useTimerStore((state) => state.syncDurationWithSettings);
   const accent = useThemeStore((state) => state.accent);
   const background = useThemeStore((state) => state.background);
+  const customBackgrounds = useThemeStore((state) => state.customBackgrounds);
 
   useEffect(() => {
     loadSettings();
@@ -44,12 +45,26 @@ export default function App() {
     root.setProperty('--accent-ring', palette.ring);
   }, [accent]);
 
+  // El fondo puede ser un preset sólido (BACKGROUNDS) o una imagen propia
+  // (buscada en customBackgrounds por id); en ambos casos se resuelve a
+  // las mismas dos variables CSS que consume la clase .app-background.
   useEffect(() => {
-    document.documentElement.style.setProperty('--app-bg', BACKGROUNDS[background].value);
-  }, [background]);
+    const root = document.documentElement.style;
+    const preset = BACKGROUNDS[background];
+    if (preset) {
+      root.setProperty('--app-bg', preset.value);
+      root.setProperty('--app-bg-image', 'none');
+      return;
+    }
+    const custom = customBackgrounds.find((bg) => bg.id === background);
+    if (custom) {
+      root.setProperty('--app-bg', BACKGROUNDS.midnight.value);
+      root.setProperty('--app-bg-image', `url("${custom.dataUrl}")`);
+    }
+  }, [background, customBackgrounds]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--app-bg)]">
+    <div className="app-background flex min-h-screen flex-col">
       <AlarmManager />
 
       {/* AppHeader vive aquí, no dentro de cada vista: así el logo no

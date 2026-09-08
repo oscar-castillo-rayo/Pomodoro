@@ -11,6 +11,7 @@
      en tiempo real; los componentes las consumen con clases arbitrarias
      de Tailwind, por ejemplo bg-[var(--accent)]. */
   --app-bg: #020617;
+  --app-bg-image: none;
   --accent: #fb7185;
   --accent-hover: #fda4af;
   --accent-soft: rgb(251 113 133 / 0.1);
@@ -29,4 +30,16 @@ body {
 
 button {
   font: inherit;
+}
+
+/* Fondo de la app: color sólido por defecto, o una imagen propia
+   (issue de fondos personalizables) cubriendo el viewport. Se usa una
+   clase en vez de utilidades arbitrarias de Tailwind porque
+   background-image con var() no se detecta de forma confiable. */
+.app-background {
+  background-color: var(--app-bg);
+  background-image: var(--app-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
