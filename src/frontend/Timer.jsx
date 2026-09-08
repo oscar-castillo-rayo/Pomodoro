@@ -3,6 +3,7 @@ import MusicPlayer from './MusicPlayer';
 import { TIMER_MODES, useTimerStore } from './store/timerStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useFocusStore } from './store/focusStore';
+import { useStatsStore } from './store/statsStore';
 import { addFocusTime } from './api';
 
 const MODES = Object.values(TIMER_MODES);
@@ -14,6 +15,13 @@ function formatTime(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
   const seconds = (totalSeconds % 60).toString().padStart(2, '0');
   return `${minutes}:${seconds}`;
+}
+
+function formatDuration(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours < 1) return `${minutes}m`;
+  return `${hours}h ${minutes % 60}m`;
 }
 
 function ProgressRing({ progress, large }) {
@@ -71,6 +79,21 @@ export default function Timer() {
 
   const focusedTask = useFocusStore((state) => state.focusedTask);
   const clearFocusedTask = useFocusStore((state) => state.clearFocusedTask);
+
+  const completedAt = useTimerStore((state) => state.completedAt);
+  const completedMode = useTimerStore((state) => state.completedMode);
+  const dailyPomodoros = useStatsStore((state) => state.pomodorosCompleted);
+  const dailyFocusSeconds = useStatsStore((state) => state.focusSeconds);
+  const recordFocusSession = useStatsStore((state) => state.recordFocusSession);
+
+  // Resumen del día (issue #24): cuenta un pomodoro cada vez que un ciclo
+  // de Concentración llega a 00:00, sin importar si auto-inicio encadenó
+  // el siguiente. Se resetea solo al cambiar de fecha (no es una racha).
+  useEffect(() => {
+    if (!completedAt || completedMode !== 'FOCUS') return;
+    recordFocusSession(useSettingsStore.getState().focus_minutes * 60);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedAt]);
 
   // Acumula tiempo de concentración en la tarea enfocada mientras el
   // modo activo es FOCUS y el temporizador corre. Se envía al backend en
@@ -166,6 +189,12 @@ export default function Timer() {
 
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col">
         <section className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12">
+          {dailyPomodoros > 0 && (
+            <p className="mb-4 text-xs text-slate-500">
+              Hoy: {dailyPomodoros} {dailyPomodoros === 1 ? 'pomodoro' : 'pomodoros'} · {formatDuration(dailyFocusSeconds)} de enfoque
+            </p>
+          )}
+
           <div className="mb-8 flex w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900/70 p-1.5 shadow-2xl shadow-black/20 backdrop-blur sm:mb-10">
             {MODES.map((timerMode) => {
               const isModeActive = timerMode.id === mode;

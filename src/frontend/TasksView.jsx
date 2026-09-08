@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createTask, deleteTask, fetchTasks } from './api';
 import { useFocusStore } from './store/focusStore';
 
@@ -41,6 +41,9 @@ export default function TasksView() {
   const focusedTask = useFocusStore((state) => state.focusedTask);
   const setFocusedTask = useFocusStore((state) => state.setFocusedTask);
   const clearFocusedTask = useFocusStore((state) => state.clearFocusedTask);
+
+  const importInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
 
   function loadTasks(status) {
     setLoading(true);
@@ -94,14 +97,86 @@ export default function TasksView() {
     }
   }
 
+  async function handleExport() {
+    setError(null);
+    try {
+      const all = await fetchTasks();
+      const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'pomodoro-tareas.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('No se pudieron exportar las tareas.');
+    }
+  }
+
+  async function handleImportFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setError(null);
+    setImporting(true);
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (!Array.isArray(parsed)) throw new Error('El archivo debe contener una lista de tareas.');
+
+      for (const item of parsed) {
+        const itemTitle = typeof item?.title === 'string' ? item.title.trim() : '';
+        if (!itemTitle) continue;
+        await createTask({
+          title: itemTitle,
+          status: STATUSES.includes(item.status) ? item.status : STATUSES[0],
+          priority: PRIORITIES.includes(item.priority) ? item.priority : PRIORITIES[1],
+        });
+      }
+      loadTasks(statusFilter);
+    } catch {
+      setError('No se pudo importar el archivo. Verifica que sea un JSON exportado desde acá.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <main className="flex flex-1 flex-col px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-100">Tareas enfocadas</h1>
-          <p className="text-sm text-slate-500">
-            Organiza lo que quieres avanzar en tus próximos ciclos de concentración.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-semibold text-slate-100">Tareas enfocadas</h1>
+            <p className="text-sm text-slate-500">
+              Organiza lo que quieres avanzar en tus próximos ciclos de concentración.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1 pt-1 text-xs">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="rounded-lg px-2 py-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200"
+            >
+              Exportar
+            </button>
+            <button
+              type="button"
+              onClick={() => importInputRef.current?.click()}
+              disabled={importing}
+              className="rounded-lg px-2 py-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:opacity-50"
+            >
+              {importing ? 'Importando…' : 'Importar'}
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+          </div>
         </div>
 
         <form
