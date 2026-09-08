@@ -4,6 +4,7 @@ import { TIMER_MODES, useTimerStore } from './store/timerStore';
 import { useSettingsStore } from './store/settingsStore';
 
 const MODES = Object.values(TIMER_MODES);
+const MODE_IDS = MODES.map((m) => m.id);
 const RADIUS = 46;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -13,12 +14,14 @@ function formatTime(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
-function ProgressRing({ progress }) {
+function ProgressRing({ progress, large }) {
   const offset = CIRCUMFERENCE * (1 - progress);
 
   return (
     <svg
-      className="h-[min(78vw,360px)] w-[min(78vw,360px)] max-w-full -rotate-90"
+      className={`max-w-full -rotate-90 transition-[height,width] duration-500 ${
+        large ? 'h-[min(90vw,460px)] w-[min(90vw,460px)]' : 'h-[min(78vw,360px)] w-[min(78vw,360px)]'
+      }`}
       viewBox="0 0 110 110"
       aria-hidden="true"
     >
@@ -59,29 +62,85 @@ export default function Timer() {
   const activeMinutes = useSettingsStore((state) => state[activeMode.settingsKey]);
   const activeDuration = activeMinutes * 60;
   const progress = activeDuration > 0 ? (activeDuration - secondsLeft) / activeDuration : 0;
+  // "Activo" = corriendo o pausado a mitad de sesión. En ese estado se
+  // oculta el botón grande "Empezar" y el anillo crece, para una vista
+  // más minimalista una vez que ya empezaste a trabajar.
+  const isActive = isRunning || secondsLeft !== activeDuration;
 
   useEffect(() => {
     if (!isRunning) return undefined;
     const intervalId = setInterval(tick, 1000);
-    return () => clearInterval(intervalId);
+    // Al volver a la pestaña (p. ej. tras minimizarla), recalcula de
+    // inmediato en vez de esperar al próximo tick del intervalo, que el
+    // navegador puede haber limitado mientras estaba en segundo plano.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [isRunning, tick]);
 
+  // Título de la pestaña con la cuenta regresiva en vivo.
+  useEffect(() => {
+    document.title = isRunning
+      ? `${formatTime(secondsLeft)} · ${activeMode.label}`
+      : 'Pomodoro Timer';
+    return () => {
+      document.title = 'Pomodoro Timer';
+    };
+  }, [isRunning, secondsLeft, activeMode.label]);
+
+  // Atajos de teclado: espacio = Empezar/Pausar, ←/→ = cambiar de modo.
+  useEffect(() => {
+    function handleKeyDown(event) {
+      const target = event.target;
+      const isTyping = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      if (isTyping) return;
+
+      if (event.code === 'Space') {
+        event.preventDefault();
+        toggle();
+      } else if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
+        event.preventDefault();
+        const currentIndex = MODE_IDS.indexOf(mode);
+        const delta = event.code === 'ArrowRight' ? 1 : -1;
+        const nextIndex = (currentIndex + delta + MODE_IDS.length) % MODE_IDS.length;
+        setMode(MODE_IDS[nextIndex]);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggle, setMode, mode]);
+
   return (
-    <main className="flex flex-1 flex-col bg-[var(--app-bg)] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+    <main className="relative flex flex-1 flex-col overflow-hidden px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
+      {/* Oscurece levemente el fondo durante Concentración para reducir
+          distracción visual; queda listo para cuando el fondo sea una
+          imagen (issue de fondos personalizables) y no solo un color. */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-700 ${
+          mode === 'FOCUS' ? 'opacity-30' : 'opacity-0'
+        }`}
+      />
+
+      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col">
         <section className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12">
           <div className="mb-8 flex w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900/70 p-1.5 shadow-2xl shadow-black/20 backdrop-blur sm:mb-10">
             {MODES.map((timerMode) => {
-              const isActive = timerMode.id === mode;
+              const isModeActive = timerMode.id === mode;
 
               return (
                 <button
                   key={timerMode.id}
                   type="button"
                   onClick={() => setMode(timerMode.id)}
-                  aria-pressed={isActive}
+                  aria-pressed={isModeActive}
                   className={`flex-1 rounded-xl px-2 py-2.5 text-xs font-medium transition-all sm:px-4 sm:py-3 sm:text-sm ${
-                    isActive
+                    isModeActive
                       ? 'bg-slate-800 text-white shadow-sm ring-1 ring-slate-700'
                       : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
                   }`}
@@ -94,7 +153,7 @@ export default function Timer() {
           </div>
 
           <div className="relative grid place-items-center">
-            <ProgressRing progress={progress} />
+            <ProgressRing progress={progress} large={isActive} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
                 {activeMode.label}
@@ -106,35 +165,52 @@ export default function Timer() {
           </div>
 
           <div className="mt-8 flex items-center gap-3 sm:mt-10">
-            <button
-              type="button"
-              onClick={toggle}
-              className="rounded-xl bg-[var(--accent)] px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition-colors hover:bg-[var(--accent-hover)] sm:text-base"
-            >
-              {isRunning ? 'Pausar' : 'Empezar'}
-            </button>
-            <button
-              type="button"
-              onClick={stop}
-              className="rounded-xl border border-slate-700 px-6 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 sm:text-base"
-            >
-              Detener
-            </button>
+            {!isActive && (
+              <button
+                type="button"
+                onClick={toggle}
+                className="rounded-xl bg-[var(--accent)] px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition-colors hover:bg-[var(--accent-hover)] sm:text-base"
+              >
+                Empezar
+              </button>
+            )}
+            {isActive && (
+              <>
+                <button
+                  type="button"
+                  onClick={toggle}
+                  aria-label={isRunning ? 'Pausar' : 'Reanudar'}
+                  className="grid h-12 w-12 place-items-center rounded-full bg-[var(--accent)] text-lg text-slate-950 shadow-lg shadow-black/20 transition-colors hover:bg-[var(--accent-hover)]"
+                >
+                  {isRunning ? '⏸' : '▶'}
+                </button>
+                <button
+                  type="button"
+                  onClick={stop}
+                  aria-label="Detener"
+                  className="grid h-12 w-12 place-items-center rounded-full border border-slate-700 text-slate-300 transition-colors hover:bg-slate-800"
+                >
+                  ⏹
+                </button>
+              </>
+            )}
           </div>
 
-          <p className="mt-8 max-w-md text-center text-sm leading-6 text-slate-500 sm:mt-10">
-            {mode === 'FOCUS'
-              ? `Un intervalo de concentración de ${activeMinutes} minutos para avanzar sin distracciones.`
-              : mode === 'SHORT'
-                ? `Tómate ${activeMinutes} minutos para despejar la mente y volver con energía.`
-                : `${activeMinutes} minutos para desconectar, descansar y prepararte para el siguiente ciclo.`}
-          </p>
+          {!isActive && (
+            <p className="mt-8 max-w-md text-center text-sm leading-6 text-slate-500 sm:mt-10">
+              {mode === 'FOCUS'
+                ? `Un intervalo de concentración de ${activeMinutes} minutos para avanzar sin distracciones.`
+                : mode === 'SHORT'
+                  ? `Tómate ${activeMinutes} minutos para despejar la mente y volver con energía.`
+                  : `${activeMinutes} minutos para desconectar, descansar y prepararte para el siguiente ciclo.`}
+            </p>
+          )}
 
           <MusicPlayer />
         </section>
 
         <footer className="py-3 text-center text-xs text-slate-600">
-          Selecciona un modo para comenzar tu próximo intervalo.
+          {isActive ? 'Espacio: pausar/reanudar · ←/→: cambiar de modo' : 'Selecciona un modo para comenzar tu próximo intervalo.'}
         </footer>
       </div>
     </main>

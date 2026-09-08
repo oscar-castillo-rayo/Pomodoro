@@ -17,6 +17,7 @@ export default function SettingsView() {
   const error = useSettingsStore((state) => state.error);
   const save = useSettingsStore((state) => state.save);
   const syncDurationWithSettings = useTimerStore((state) => state.syncDurationWithSettings);
+  const timerRunning = useTimerStore((state) => state.isRunning);
 
   const accent = useThemeStore((state) => state.accent);
   const background = useThemeStore((state) => state.background);
@@ -67,6 +68,11 @@ export default function SettingsView() {
           <p className="text-sm text-slate-500">
             Personaliza la duración de cada ciclo y si quieres que empiecen automáticamente.
           </p>
+          {timerRunning && (
+            <p className="mt-1 text-xs text-amber-400">
+              Bloqueado durante la sesión — detén el temporizador para cambiar la duración.
+            </p>
+          )}
         </div>
 
         <form
@@ -78,9 +84,10 @@ export default function SettingsView() {
             <input
               type="number"
               min="1"
+              disabled={timerRunning}
               value={form.focus_minutes}
               onChange={(event) => updateField('focus_minutes', Number(event.target.value))}
-              className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-slate-100"
+              className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </label>
           <label className="flex items-center justify-between gap-4 text-sm text-slate-300">
@@ -88,9 +95,10 @@ export default function SettingsView() {
             <input
               type="number"
               min="1"
+              disabled={timerRunning}
               value={form.short_break_minutes}
               onChange={(event) => updateField('short_break_minutes', Number(event.target.value))}
-              className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-slate-100"
+              className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </label>
           <label className="flex items-center justify-between gap-4 text-sm text-slate-300">
@@ -98,9 +106,10 @@ export default function SettingsView() {
             <input
               type="number"
               min="1"
+              disabled={timerRunning}
               value={form.long_break_minutes}
               onChange={(event) => updateField('long_break_minutes', Number(event.target.value))}
-              className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-slate-100"
+              className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-right text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </label>
 
