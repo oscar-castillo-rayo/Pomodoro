@@ -31,12 +31,33 @@ class TaskIn(BaseModel):
 
 class TaskOut(TaskIn):
     id: int
+    focus_seconds: int = 0
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+
+class FocusTimeIn(BaseModel):
+    seconds: int
 
 class SettingsIn(BaseModel):
     focus_minutes: int
     short_break_minutes: int
     long_break_minutes: int
-    auto_start: bool = False
+    auto_start_break: bool = False
+    auto_start_focus: bool = False
+
+class SettingsOut(SettingsIn):
+    pass
+
+DEFAULT_SETTINGS = SettingsOut(
+    focus_minutes=25,
+    short_break_minutes=5,
+    long_break_minutes=15,
+    auto_start_break=False,
+    auto_start_focus=False,
+)
 
 @app.post('/tasks', response_model=TaskOut)
 def create_task(payload: TaskIn):
@@ -58,6 +79,38 @@ def list_tasks(status: Optional[str] = None):
     db.close()
     return results
 
+@app.put('/tasks/{task_id}', response_model=TaskOut)
+def update_task(task_id: int, payload: TaskUpdate):
+    db: Session = database.SessionLocal()
+    task = db.query(models.Task).get(task_id)
+    if not task:
+        db.close()
+        raise HTTPException(status_code=404, detail='Task not found')
+    if payload.title is not None:
+        task.title = payload.title
+    if payload.status is not None:
+        task.status = payload.status
+    if payload.priority is not None:
+        task.priority = payload.priority
+    db.commit()
+    db.refresh(task)
+    db.close()
+    return task
+
+@app.post('/tasks/{task_id}/focus', response_model=TaskOut)
+def add_focus_time(task_id: int, payload: FocusTimeIn):
+    db: Session = database.SessionLocal()
+    task = db.query(models.Task).get(task_id)
+    if not task:
+        db.close()
+        raise HTTPException(status_code=404, detail='Task not found')
+    if payload.seconds > 0:
+        task.focus_seconds = (task.focus_seconds or 0) + payload.seconds
+        db.commit()
+        db.refresh(task)
+    db.close()
+    return task
+
 @app.delete('/tasks/{task_id}')
 def delete_task(task_id: int):
     db: Session = database.SessionLocal()
@@ -70,7 +123,14 @@ def delete_task(task_id: int):
     db.close()
     return {"ok": True}
 
-@app.put('/settings')
+@app.get('/settings', response_model=SettingsOut)
+def get_settings():
+    db: Session = database.SessionLocal()
+    settings = db.query(models.Settings).first()
+    db.close()
+    return settings if settings else DEFAULT_SETTINGS
+
+@app.put('/settings', response_model=SettingsOut)
 def update_settings(s: SettingsIn):
     db: Session = database.SessionLocal()
     settings = db.query(models.Settings).first()
@@ -79,14 +139,17 @@ def update_settings(s: SettingsIn):
             focus_minutes=s.focus_minutes,
             short_break_minutes=s.short_break_minutes,
             long_break_minutes=s.long_break_minutes,
-            auto_start=s.auto_start,
+            auto_start_break=s.auto_start_break,
+            auto_start_focus=s.auto_start_focus,
         )
         db.add(settings)
     else:
         settings.focus_minutes = s.focus_minutes
         settings.short_break_minutes = s.short_break_minutes
         settings.long_break_minutes = s.long_break_minutes
-        settings.auto_start = s.auto_start
+        settings.auto_start_break = s.auto_start_break
+        settings.auto_start_focus = s.auto_start_focus
     db.commit()
+    db.refresh(settings)
     db.close()
-    return {"ok": True}
+    return settings
