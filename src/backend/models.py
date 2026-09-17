@@ -15,7 +15,6 @@ class Task(Base):
     focus_seconds = Column(Integer, default=0)
 
 
-
 class Settings(Base):
     __tablename__ = 'settings'
     id = Column(Integer, primary_key=True, index=True)
